@@ -23,7 +23,7 @@
 #include "tinyusb.h"
 #include "tusb_cdc_acm.h"
 
-#if CONFIG_ENABLE_I2S_WAVE_GEN
+#if CONFIG_ENABLE_I2S_WAVE_GEN || CONFIG_ENABLE_SDM_WAVE_GEN
 #include "wave_gen.h"
 #endif
 
@@ -283,6 +283,17 @@ static inline float sample_to_volts(uint16_t raw, bool calibrated) {
   return (float)raw; // fallback raw counts
 }
 
+static inline float sample_to_centered(uint16_t raw, bool calibrated,
+                                       int midpoint_mv) {
+  if (calibrated) {
+    int mv = 0;
+    if (adc_cali_raw_to_voltage(cali_handle, raw, &mv) == ESP_OK) {
+      return ((float)(mv - midpoint_mv)) / 1000.0f;
+    }
+  }
+  return (float)raw - 2048.0f; // 12-bit midpoint
+}
+
 static void apply_window(float *buf) {
   for (int i = 0; i < FFT_SIZE; i++) {
     buf[i] *= win[i];
@@ -327,6 +338,10 @@ static adc_atten_t cfg_atten(void) {
 static void adc_fft_task(void *arg) {
   adc_atten_t atten = cfg_atten();
   bool calibrated = adc_calibration_init(ADC_UNIT_1, atten);
+  int midpoint_mv = 0;
+  if (calibrated) {
+    (void)adc_cali_raw_to_voltage(cali_handle, 2048, &midpoint_mv);
+  }
 
   adc_continuous_handle_t adc_handle = NULL;
   adc_continuous_handle_cfg_t handle_cfg = {
@@ -436,9 +451,11 @@ static void adc_fft_task(void *arg) {
         adc_digi_output_data_t *p = (adc_digi_output_data_t *)&raw[i];
         if (p->type2.unit != ADC_UNIT_1) { continue; }
         if (p->type2.channel == CONFIG_ADC_CH0 && count0 < FFT_SIZE) {
-          ch0[count0++] = sample_to_volts(p->type2.data, calibrated);
+          ch0[count0++] = sample_to_centered(p->type2.data, calibrated,
+                                             midpoint_mv);
         } else if (p->type2.channel == CONFIG_ADC_CH1 && count1 < FFT_SIZE) {
-          ch1[count1++] = sample_to_volts(p->type2.data, calibrated);
+          ch1[count1++] = sample_to_centered(p->type2.data, calibrated,
+                                             midpoint_mv);
         }
       }
     }
@@ -535,6 +552,10 @@ void app_main(void) {
   wave_gen_set_type(WAVE_TYPE_SINE);
   wave_gen_set_volume(0.5f);
   ESP_ERROR_CHECK(wave_gen_start());
+#endif
+
+#if CONFIG_ENABLE_SDM_WAVE_GEN
+  ESP_ERROR_CHECK(wave_gen_sdm_start());
 #endif
 
   /* Initialize DSP before any task can call FFT/window code. */

@@ -1,11 +1,32 @@
 #include <math.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2s_std.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "wave_gen.h"
+
+#if CONFIG_ENABLE_SDM_WAVE_GEN
+#if defined(__has_include)
+#if __has_include("driver/sdm.h") && __has_include("driver/gptimer.h")
+#define WAVE_GEN_HAS_SDM 1
+#include "driver/sdm.h"
+#include "driver/gptimer.h"
+#include "esp_attr.h"
+#else
+#define WAVE_GEN_HAS_SDM 0
+#endif
+#else
+#define WAVE_GEN_HAS_SDM 1
+#include "driver/sdm.h"
+#include "driver/gptimer.h"
+#include "esp_attr.h"
+#endif
+#else
+#define WAVE_GEN_HAS_SDM 0
+#endif
 
 static const char *TAG = "wave_gen";
 
@@ -25,6 +46,102 @@ static float s_volume = 0.5f;
 static wave_type_t s_type = WAVE_TYPE_SINE;
 static uint32_t s_sample_rate = DEFAULT_SAMPLE_RATE;
 static float s_phase = 0.0f;
+
+#if WAVE_GEN_HAS_SDM
+#define SDM_LUT_SIZE 256
+#define SDM_CARRIER_HZ (1 * 1000 * 1000)
+#define SDM_UPDATE_HZ (20 * 1000)
+#define SDM_DENSITY_MAX 90
+
+static sdm_channel_handle_t s_sdm_chan = NULL;
+static gptimer_handle_t s_sdm_timer = NULL;
+static volatile uint32_t s_sdm_phase_acc = 0;
+static uint32_t s_sdm_phase_step = 0;
+static int8_t s_sdm_lut[SDM_LUT_SIZE];
+static bool s_sdm_running = false;
+
+static void sdm_build_lut(float amplitude) {
+    if (amplitude < 0.0f) amplitude = 0.0f;
+    if (amplitude > 1.0f) amplitude = 1.0f;
+    for (int i = 0; i < SDM_LUT_SIZE; i++) {
+        float phase = (float)i / (float)SDM_LUT_SIZE;
+        float s = sinf(phase * 2.0f * PI);
+        int32_t density = (int32_t)lrintf(s * amplitude * (float)SDM_DENSITY_MAX);
+        if (density > SDM_DENSITY_MAX) density = SDM_DENSITY_MAX;
+        if (density < -SDM_DENSITY_MAX) density = -SDM_DENSITY_MAX;
+        s_sdm_lut[i] = (int8_t)density;
+    }
+}
+
+static bool IRAM_ATTR sdm_timer_cb(gptimer_handle_t timer,
+                                  const gptimer_alarm_event_data_t *edata,
+                                  void *user_ctx) {
+    (void)timer;
+    (void)edata;
+    (void)user_ctx;
+    uint32_t phase = s_sdm_phase_acc + s_sdm_phase_step;
+    s_sdm_phase_acc = phase;
+    uint8_t idx = (uint8_t)(phase >> 24);
+    sdm_channel_set_pulse_density(s_sdm_chan, s_sdm_lut[idx]);
+    return false;
+}
+
+static esp_err_t sdm_init(uint32_t freq_hz) {
+    if (s_sdm_chan) {
+        return ESP_OK;
+    }
+
+    sdm_config_t config = {
+        .clk_src = SDM_CLK_SRC_DEFAULT,
+        .sample_rate_hz = SDM_CARRIER_HZ,
+        .gpio_num = CONFIG_SDM_GPIO,
+    };
+    ESP_RETURN_ON_ERROR(sdm_new_channel(&config, &s_sdm_chan), TAG, "Failed to create SDM channel");
+    ESP_RETURN_ON_ERROR(sdm_channel_enable(s_sdm_chan), TAG, "Failed to enable SDM channel");
+
+    sdm_build_lut(s_volume);
+    if (freq_hz < 1) freq_hz = 1;
+    s_sdm_phase_step = (uint32_t)(((uint64_t)freq_hz << 32) / SDM_UPDATE_HZ);
+    s_sdm_phase_acc = 0;
+
+    gptimer_config_t tcfg = {
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
+        .direction = GPTIMER_COUNT_UP,
+        .resolution_hz = SDM_UPDATE_HZ,
+    };
+    ESP_RETURN_ON_ERROR(gptimer_new_timer(&tcfg, &s_sdm_timer), TAG, "Failed to create SDM timer");
+
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = sdm_timer_cb,
+    };
+    ESP_RETURN_ON_ERROR(gptimer_register_event_callbacks(s_sdm_timer, &cbs, NULL), TAG, "Failed to register SDM timer callback");
+
+    gptimer_alarm_config_t alarm_cfg = {
+        .reload_count = 0,
+        .alarm_count = 1,
+        .flags.auto_reload_on_alarm = true,
+    };
+    ESP_RETURN_ON_ERROR(gptimer_set_alarm_action(s_sdm_timer, &alarm_cfg), TAG, "Failed to set SDM timer alarm");
+    ESP_RETURN_ON_ERROR(gptimer_enable(s_sdm_timer), TAG, "Failed to enable SDM timer");
+    ESP_RETURN_ON_ERROR(gptimer_start(s_sdm_timer), TAG, "Failed to start SDM timer");
+
+    return ESP_OK;
+}
+
+static void sdm_deinit(void) {
+    if (s_sdm_timer) {
+        gptimer_stop(s_sdm_timer);
+        gptimer_disable(s_sdm_timer);
+        gptimer_del_timer(s_sdm_timer);
+        s_sdm_timer = NULL;
+    }
+    if (s_sdm_chan) {
+        sdm_channel_disable(s_sdm_chan);
+        sdm_del_channel(s_sdm_chan);
+        s_sdm_chan = NULL;
+    }
+}
+#endif
 
 static void wave_gen_task(void *args)
 {
@@ -181,4 +298,33 @@ void wave_gen_set_volume(float volume)
     if (volume < 0.0f) volume = 0.0f;
     if (volume > 1.0f) volume = 1.0f;
     s_volume = volume;
+}
+
+esp_err_t wave_gen_sdm_start(void)
+{
+#if WAVE_GEN_HAS_SDM
+    if (s_sdm_running) {
+        return ESP_OK;
+    }
+    ESP_LOGI(TAG, "Starting SDM sine on GPIO %d at %d Hz", CONFIG_SDM_GPIO, CONFIG_SDM_FREQ_HZ);
+    ESP_RETURN_ON_ERROR(sdm_init((uint32_t)CONFIG_SDM_FREQ_HZ), TAG, "SDM init failed");
+    s_sdm_running = true;
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t wave_gen_sdm_stop(void)
+{
+#if WAVE_GEN_HAS_SDM
+    if (!s_sdm_running) {
+        return ESP_OK;
+    }
+    s_sdm_running = false;
+    sdm_deinit();
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
 }

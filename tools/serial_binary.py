@@ -81,7 +81,7 @@ def main() -> int:
     parser.add_argument("--max-frames", type=int, default=0, help="Stop after N frames (0 = run until Ctrl+C)")
     parser.add_argument("--flush-every", type=int, default=50, help="Flush to disk every N frames (default: 50)")
     parser.add_argument("--plot", action="store_true", default=True, help="Live plot ch0/ch1 like liveplot.py")
-    parser.add_argument("--plot-interval", type=int, default=1, help="Plot refresh interval in ms")
+    parser.add_argument("--plot-interval", type=int, default=2, help="Plot refresh interval in ms")
     parser.add_argument("--max-freq", type=float, default=22000, help="Maximum frequency to display in Hz (0 disables)")
     parser.add_argument("--audio", action="store_true", default=False, help="Play audio representation of FFT magnitudes")
     parser.add_argument("--audio-rate", type=int, default=44100, help="Audio sample rate in Hz")
@@ -93,7 +93,7 @@ def main() -> int:
     parser.add_argument("--reconnect-delay", type=float, default=0.5, help="Seconds between reconnect attempts")
     parser.add_argument("--no-plot-freq", action="store_true", help="Disable Frequency Domain plot within plotting mode")
     parser.add_argument("--no-plot-time", action="store_true", help="Disable Time Domain plot within plotting mode")
-    parser.add_argument("-w", "--window", choices=['0', '1', '2', '3'], default='0', help="Windowing: 0=None, 1=Hann, 2=Hamming, 3=Blackman")
+    parser.add_argument("-w", "--window", choices=['0', '1', '2', '3'], default='3', help="Windowing: 0=None, 1=Hann, 2=Hamming, 3=Blackman")
     parser.add_argument("--inspect-frames", action="store_true", help="Print frame metadata and payload sample for debugging")
     args = parser.parse_args()
 
