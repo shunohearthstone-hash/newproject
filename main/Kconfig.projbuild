@@ -213,6 +213,34 @@ config STATUS_NEOPIXEL_BRIGHTNESS
 
 endmenu
 
+menu "CDC diagnostics"
+
+config DIAG_CDC_ENABLE
+    bool "Enable CDC runtime diagnostics"
+    default n
+    help
+        When enabled the firmware will collect and periodically log TinyUSB CDC
+        metrics (bytes/sec, write-available samples, send latency). Keep this
+        disabled in production unless diagnosing streaming issues.
+
+config DIAG_CDC_LOG_INTERVAL_S
+    int "CDC diagnostics log interval (s)"
+    default 5
+    range 1 600
+    depends on DIAG_CDC_ENABLE
+    help
+        Interval between diagnostic summary logs.
+
+config DIAG_CDC_SAMPLE_WRITE_AVAILABLE
+    bool "Sample tud_cdc_n_write_available() during sends"
+    default y
+    depends on DIAG_CDC_ENABLE
+    help
+        When enabled the CDC TX path will collect min/max/avg of
+        tud_cdc_n_write_available() to help identify USB stall conditions.
+
+endmenu
+
 menu "Wave Generator Configuration"
 
     config ENABLE_I2S_WAVE_GEN

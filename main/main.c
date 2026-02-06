@@ -146,9 +146,71 @@ static void build_frame(frame_wire_t *out, const float *data,
   write_u32_le(dst + off, crc);
 }
 
+#if CONFIG_DIAG_CDC_ENABLE
+typedef struct {
+  uint64_t total_bytes_sent;    /* lifetime */
+  uint32_t window_bytes;        /* bytes in current window */
+  uint64_t window_start_ms;
+  uint32_t wa_min;
+  uint32_t wa_max;
+  uint64_t wa_sum;
+  uint32_t wa_count;
+} diag_cdc_t;
+static diag_cdc_t s_diag_cdc;
+
+static void diag_cdc_reset_window(uint64_t now_ms)
+{
+  s_diag_cdc.window_bytes = 0;
+  s_diag_cdc.window_start_ms = now_ms;
+  s_diag_cdc.wa_min = UINT32_MAX;
+  s_diag_cdc.wa_max = 0;
+  s_diag_cdc.wa_sum = 0;
+  s_diag_cdc.wa_count = 0;
+}
+
+static void diag_cdc_sample_wa(uint32_t v)
+{
+  if (v < s_diag_cdc.wa_min) s_diag_cdc.wa_min = v;
+  if (v > s_diag_cdc.wa_max) s_diag_cdc.wa_max = v;
+  s_diag_cdc.wa_sum += v;
+  s_diag_cdc.wa_count++;
+}
+
+static void diag_cdc_on_queued(size_t q)
+{
+  s_diag_cdc.total_bytes_sent += q;
+  s_diag_cdc.window_bytes += (uint32_t)q;
+}
+
+static void diag_cdc_maybe_log(uint64_t now_ms)
+{
+  const uint64_t interval_ms = (uint64_t)CONFIG_DIAG_CDC_LOG_INTERVAL_S * 1000ULL;
+  if (now_ms < s_diag_cdc.window_start_ms + interval_ms) return;
+
+  uint64_t elapsed = now_ms - s_diag_cdc.window_start_ms;
+  float bps = elapsed ? (s_diag_cdc.window_bytes * 1000.0f) / (float)elapsed : 0.0f;
+  uint32_t wa_avg = s_diag_cdc.wa_count ? (uint32_t)(s_diag_cdc.wa_sum / s_diag_cdc.wa_count) : 0;
+
+  ESP_LOGI(TAG, "CDC diag: bytes_sec=%.1f B/s window=%llums total=%llu bytes, wa[min/avg/max]=%u/%u/%u count=%u",
+           bps, (unsigned long long)elapsed,
+           (unsigned long long)s_diag_cdc.total_bytes_sent,
+           (unsigned)s_diag_cdc.wa_min == UINT32_MAX ? 0 : (unsigned)s_diag_cdc.wa_min,
+           (unsigned)wa_avg,
+           (unsigned)s_diag_cdc.wa_max,
+           (unsigned)s_diag_cdc.wa_count);
+
+  /* reset window */
+  diag_cdc_reset_window(now_ms);
+}
+#endif /* CONFIG_DIAG_CDC_ENABLE */
+
 static void cdc_tx_task(void *arg) {
 #if 1
   static frame_wire_t frm;
+#if CONFIG_DIAG_CDC_ENABLE
+  /* initialize diagnostic window at task start */
+  diag_cdc_reset_window(esp_timer_get_time() / 1000ULL);
+#endif
   while (1) {
     if (xQueueReceive(g_frameq, &frm, portMAX_DELAY) == pdTRUE) {
       if (!tusb_cdc_acm_initialized(g_data_port) ||
@@ -161,9 +223,13 @@ static void cdc_tx_task(void *arg) {
 
       /* Wait for TX FIFO to have enough space before starting */
       int retries = 50;
-      while (tud_cdc_n_write_available((uint8_t)g_data_port) < 64 &&
-             retries-- > 0) {
-        vTaskDelay(pdMS_TO_TICKS(5));
+      while (1) {
+        uint32_t wa = tud_cdc_n_write_available((uint8_t)g_data_port);
+#if CONFIG_DIAG_CDC_ENABLE && CONFIG_DIAG_CDC_SAMPLE_WRITE_AVAILABLE
+        diag_cdc_sample_wa(wa);
+#endif
+        if (wa >= 64 || retries-- <= 0) break;
+        vTaskDelay(pdMS_TO_TICKS(1)); //previously 5
       }
 
       /* Send in larger chunks with less delay */
@@ -183,6 +249,9 @@ static void cdc_tx_task(void *arg) {
           vTaskDelay(pdMS_TO_TICKS(2)); // Shorter delay
           continue;
         }
+#if CONFIG_DIAG_CDC_ENABLE
+        diag_cdc_on_queued(queued);
+#endif
         sent += queued;
 
         /* Flush periodically to keep data moving */
@@ -213,6 +282,11 @@ static void cdc_tx_task(void *arg) {
             }
           }
         }
+#endif
+#if CONFIG_DIAG_CDC_ENABLE
+        /* periodic summary log (non-blocking) */
+        uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+        diag_cdc_maybe_log(now_ms);
 #endif
 #endif
       }

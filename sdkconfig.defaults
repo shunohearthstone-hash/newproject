@@ -30,7 +30,10 @@ CONFIG_STATUS_NEOPIXEL_BRIGHTNESS=32
 
 # Disable Wi-Fi to avoid ADC interference
 # CONFIG_ESP_WIFI_ENABLED is not set
-
+# CDC diagnostics (disabled by default)
+# CONFIG_DIAG_CDC_ENABLE is not set
+CONFIG_DIAG_CDC_LOG_INTERVAL_S=5
+CONFIG_DIAG_CDC_SAMPLE_WRITE_AVAILABLE=y
 # Wave generator disabled by default
 # CONFIG_ENABLE_I2S_WAVE_GEN is not set
 # CONFIG_ENABLE_SDM_WAVE_GEN is not set
