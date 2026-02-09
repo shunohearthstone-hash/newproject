@@ -13,6 +13,7 @@ set(srcs
     )
 
 set(priv_requires
+    freertos
     usb
     vfs
     esp_ringbuf
