@@ -795,7 +795,7 @@ void app_main(void) {
 #endif
 
   g_frameq = xQueueCreate(
-                          4,
+                          2,
                           sizeof(frame_wire_t));
   assert(g_frameq);
 
