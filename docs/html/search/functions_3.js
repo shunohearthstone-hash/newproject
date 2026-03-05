@@ -1,0 +1,15 @@
+var searchData=
+[
+  ['cdc_5fobj_5fcheck_0',['cdc_obj_check',['../cdc_8c.html#a53a3cac48508654d002fa4d573f87504',1,'cdc.c']]],
+  ['cdc_5ftx_5ftask_1',['cdc_tx_task',['../main_2main_8c.html#ad159bf0147cc4f5288bae8edf3a846e5',1,'main.c']]],
+  ['cfg_5fatten_2',['cfg_atten',['../main_2main_8c.html#ae21970c9cc814c282cd9e7bba97c6e02',1,'main.c']]],
+  ['clear_3',['clear',['../classdspm_1_1_mat.html#a676ed57c4f8083b46096c84abab53781',1,'dspm::Mat']]],
+  ['cofactor_4',['cofactor',['../classdspm_1_1_mat.html#ae8001066240ab06aa1390ac944835ff1',1,'dspm::Mat']]],
+  ['convert_5ffloat2short_5',['convert_float2short',['../applications_2lyrat__board__app_2main_2audio__amp__main_8c.html#ae8bef2245ac9fb55d56a7af6c4b5fe5d',1,'convert_float2short(float *float_data, int16_t *int16_data, int len):&#160;audio_amp_main.c'],['../external__examples_21fa4e38f_2lyrat__board__app_2main_2audio__amp__main_8c.html#ae8bef2245ac9fb55d56a7af6c4b5fe5d',1,'convert_float2short(float *float_data, int16_t *int16_data, int len):&#160;audio_amp_main.c'],['../external__examples_2b00f000e_2applications_2lyrat__board__app_2main_2audio__amp__main_8c.html#ae8bef2245ac9fb55d56a7af6c4b5fe5d',1,'convert_float2short(float *float_data, int16_t *int16_data, int len):&#160;audio_amp_main.c']]],
+  ['convert_5fshort2float_6',['convert_short2float',['../applications_2lyrat__board__app_2main_2audio__amp__main_8c.html#aedfa0ee2b0d2e41a702707315faa5e10',1,'convert_short2float(int16_t *int16_data, float *float_data, int len):&#160;audio_amp_main.c'],['../external__examples_21fa4e38f_2lyrat__board__app_2main_2audio__amp__main_8c.html#aedfa0ee2b0d2e41a702707315faa5e10',1,'convert_short2float(int16_t *int16_data, float *float_data, int len):&#160;audio_amp_main.c'],['../external__examples_2b00f000e_2applications_2lyrat__board__app_2main_2audio__amp__main_8c.html#aedfa0ee2b0d2e41a702707315faa5e10',1,'convert_short2float(int16_t *int16_data, float *float_data, int len):&#160;audio_amp_main.c']]],
+  ['convert_5fto_5frgb_7',['convert_to_rgb',['../components_2espressif____esp-dsp_2applications_2spectrum__box__lite_2main_2main_8c.html#a7f8855b4c88c8357b7e3f1572ad8810a',1,'convert_to_rgb(uint8_t minval, uint8_t maxval, int8_t val):&#160;main.c'],['../components_2espressif____esp-dsp_2external__examples_2b00f000e_2applications_2spectrum__box__lite_2main_2main_8c.html#a7f8855b4c88c8357b7e3f1572ad8810a',1,'convert_to_rgb(uint8_t minval, uint8_t maxval, int8_t val):&#160;main.c']]],
+  ['copy_8',['Copy',['../classdspm_1_1_mat.html#a9b11a8f5022e6c54b212bf9af880b670',1,'dspm::Mat']]],
+  ['copyhead_9',['CopyHead',['../classdspm_1_1_mat.html#aa1c170522b5c50effcb87452a2b85471',1,'dspm::Mat']]],
+  ['covarianceprediction_10',['CovariancePrediction',['../classekf.html#a6588ad6c3eae0d1a177b35ea75b5a4f3',1,'ekf']]],
+  ['cplx_5fgen_5ffree_11',['cplx_gen_free',['../dsps__cplx__gen__init_8c.html#a8d1fc1e0f4dd0e580e2f0a315f7a3959',1,'cplx_gen_free(cplx_sig_t *cplx_gen):&#160;dsps_cplx_gen_init.c'],['../dsps__cplx__gen_8h.html#a8d1fc1e0f4dd0e580e2f0a315f7a3959',1,'cplx_gen_free(cplx_sig_t *cplx_gen):&#160;dsps_cplx_gen_init.c']]]
+];

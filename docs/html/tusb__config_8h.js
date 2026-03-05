@@ -1,0 +1,28 @@
+var tusb__config_8h =
+[
+    [ "CFG_TUD_CDC", "tusb__config_8h.html#a7df8fc8e36e96c632d18c5e6a283cbad", null ],
+    [ "CFG_TUD_CDC_RX_BUFSIZE", "tusb__config_8h.html#a0be811273fed0a24763e4a22700e2b1d", null ],
+    [ "CFG_TUD_CDC_TX_BUFSIZE", "tusb__config_8h.html#a1583fbe8a2453ca3a5986bd6633390c4", null ],
+    [ "CFG_TUD_CUSTOM_CLASS", "tusb__config_8h.html#ad3c6bc4aaf7414694b2c948713ae53d0", null ],
+    [ "CFG_TUD_ENDPOINT0_SIZE", "tusb__config_8h.html#a9b99a70dc9fc74ecc23108ab18bbebe4", null ],
+    [ "CFG_TUD_HID", "tusb__config_8h.html#a59ed1f17152d738c0f50edf02565cd20", null ],
+    [ "CFG_TUD_MIDI", "tusb__config_8h.html#aa407aa4b24ddb98c5c8c27d533ec0e9a", null ],
+    [ "CFG_TUD_MIDI_EP_BUFSIZE", "tusb__config_8h.html#a391a84bd143c2f18fc2e2ea3a8dc9e24", null ],
+    [ "CFG_TUD_MIDI_EPSIZE", "tusb__config_8h.html#ab9cbe318d752586fa902cfa818e547aa", null ],
+    [ "CFG_TUD_MIDI_RX_BUFSIZE", "tusb__config_8h.html#a66785f976456b0f6b29e8c3e988d6f17", null ],
+    [ "CFG_TUD_MIDI_TX_BUFSIZE", "tusb__config_8h.html#a38d730e21eca1a3294286809eaa9a57f", null ],
+    [ "CFG_TUD_MSC", "tusb__config_8h.html#a159e8998f430441201fe575035576de3", null ],
+    [ "CFG_TUD_MSC_BUFSIZE", "tusb__config_8h.html#ae815050695b14aa0f38f03cc5411cd00", null ],
+    [ "CFG_TUSB_DEBUG", "tusb__config_8h.html#a4c102f40f3ecdd15c3c64b3e903e8385", null ],
+    [ "CFG_TUSB_MEM_ALIGN", "tusb__config_8h.html#ae46ca7dc14babee346d8af7aa8db403e", null ],
+    [ "CFG_TUSB_MEM_SECTION", "tusb__config_8h.html#a360b21fa11ef498d9c4dc49428ab780f", null ],
+    [ "CFG_TUSB_OS", "tusb__config_8h.html#a3d27955bb9aee39c43cb3756ffb372c1", null ],
+    [ "CFG_TUSB_RHPORT0_MODE", "tusb__config_8h.html#ad9c321822c55ec521796b34675d6569a", null ],
+    [ "CONFIG_TINYUSB_CDC_COUNT", "tusb__config_8h.html#af4906ce6e79d205ba7b2ba3f3b101739", null ],
+    [ "CONFIG_TINYUSB_CDC_ENABLED", "tusb__config_8h.html#a011d634ca76e3641ab49ec95ac1bfa74", null ],
+    [ "CONFIG_TINYUSB_CUSTOM_CLASS_ENABLED", "tusb__config_8h.html#a44723be58413a20f41237068f054ba39", null ],
+    [ "CONFIG_TINYUSB_DEBUG_LEVEL", "tusb__config_8h.html#a4c7846ab1151311c635133ef93966ad4", null ],
+    [ "CONFIG_TINYUSB_HID_COUNT", "tusb__config_8h.html#a9b5f83b4e9d46785bc92754fb4ad824e", null ],
+    [ "CONFIG_TINYUSB_MIDI_COUNT", "tusb__config_8h.html#ade6f19a1cf8b3139c6f181c99388f408", null ],
+    [ "CONFIG_TINYUSB_MSC_ENABLED", "tusb__config_8h.html#a11a88cf8bf8201fdd86d0ed15852476e", null ]
+];

@@ -1,0 +1,13 @@
+var searchData=
+[
+  ['lcd_5fcmd_5fbits_0',['LCD_CMD_BITS',['../applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a970dd1ec4cf86ef299ba32369eb49ce2',1,'LCD_CMD_BITS:&#160;init_display.c'],['../external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a970dd1ec4cf86ef299ba32369eb49ce2',1,'LCD_CMD_BITS:&#160;init_display.c']]],
+  ['lcd_5fledc_5fch_1',['LCD_LEDC_CH',['../applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#ac3368a2115f9a8a758510b974eb12743',1,'LCD_LEDC_CH:&#160;init_display.c'],['../external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#ac3368a2115f9a8a758510b974eb12743',1,'LCD_LEDC_CH:&#160;init_display.c']]],
+  ['lcd_5fparam_5fbits_2',['LCD_PARAM_BITS',['../applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#aeaa4b9f3aa7437180455e8da8e37c11f',1,'LCD_PARAM_BITS:&#160;init_display.c'],['../external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#aeaa4b9f3aa7437180455e8da8e37c11f',1,'LCD_PARAM_BITS:&#160;init_display.c']]],
+  ['led_5fstrip_5freset_5fms_3',['LED_STRIP_RESET_MS',['../led__strip__rmt__dev__idf4_8c.html#a0e81d18cfaadedce6569a2cc4e6bcaef',1,'led_strip_rmt_dev_idf4.c']]],
+  ['led_5fstrip_5frmt_5fdefault_5fmem_5fblock_5fsymbols_4',['LED_STRIP_RMT_DEFAULT_MEM_BLOCK_SYMBOLS',['../led__strip__rmt__dev_8c.html#a918f4be11d01490a01b142d8e0733892',1,'LED_STRIP_RMT_DEFAULT_MEM_BLOCK_SYMBOLS:&#160;led_strip_rmt_dev.c'],['../led__strip__rmt__dev__idf4_8c.html#a918f4be11d01490a01b142d8e0733892',1,'LED_STRIP_RMT_DEFAULT_MEM_BLOCK_SYMBOLS:&#160;led_strip_rmt_dev_idf4.c']]],
+  ['led_5fstrip_5frmt_5fdefault_5fresolution_5',['LED_STRIP_RMT_DEFAULT_RESOLUTION',['../led__strip__rmt__dev_8c.html#ada4d311b3d174109fa63921894003ad7',1,'led_strip_rmt_dev.c']]],
+  ['led_5fstrip_5frmt_5fdefault_5ftrans_5fqueue_5fsize_6',['LED_STRIP_RMT_DEFAULT_TRANS_QUEUE_SIZE',['../led__strip__rmt__dev_8c.html#a319eda79febdec82d2987042e3db38e4',1,'led_strip_rmt_dev.c']]],
+  ['led_5fstrip_5frmt_5fres_5fhz_7',['LED_STRIP_RMT_RES_HZ',['../main_2main_8c.html#aecaf3f695131a8da4a755b8e490b8c9f',1,'main.c']]],
+  ['led_5fstrip_5fspi_5fdefault_5fresolution_8',['LED_STRIP_SPI_DEFAULT_RESOLUTION',['../led__strip__spi__dev_8c.html#afe73d55fb522cf8ad0d345ba6fde4a07',1,'led_strip_spi_dev.c']]],
+  ['led_5fstrip_5fspi_5fdefault_5ftrans_5fqueue_5fsize_9',['LED_STRIP_SPI_DEFAULT_TRANS_QUEUE_SIZE',['../led__strip__spi__dev_8c.html#a8da18641ac007a6e87c491143d5e6db1',1,'led_strip_spi_dev.c']]]
+];
