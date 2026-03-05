@@ -30,7 +30,7 @@ config ADC_FS
 config ADC_FFT_SIZE
     int "FFT size"
     default 2048
-    range 512 4096
+    range 512 8192
     help
         FFT length (power of two). 2048 gives ~21.5 Hz bins at 44 KS/s. 4096 halves bin width at higher CPU cost.
 
@@ -210,6 +210,70 @@ config STATUS_NEOPIXEL_BRIGHTNESS
     depends on STATUS_NEOPIXEL_ENABLE
     help
         Brightness scaling factor (1=dim, 255=max).
+
+endmenu
+
+menu "CDC diagnostics"
+
+config DIAG_CDC_ENABLE
+    bool "Enable CDC runtime diagnostics"
+    default n
+    help
+        When enabled the firmware will collect and periodically log TinyUSB CDC
+        metrics (bytes/sec, write-available samples, send latency). Keep this
+        disabled in production unless diagnosing streaming issues.
+
+config DIAG_CDC_LOG_INTERVAL_S
+    int "CDC diagnostics log interval (s)"
+    default 5
+    range 1 600
+    depends on DIAG_CDC_ENABLE
+    help
+        Interval between diagnostic summary logs.
+
+config DIAG_CDC_SAMPLE_WRITE_AVAILABLE
+    bool "Sample tud_cdc_n_write_available() during sends"
+    default y
+    depends on DIAG_CDC_ENABLE
+    help
+        When enabled the CDC TX path will collect min/max/avg of
+        tud_cdc_n_write_available() to help identify USB stall conditions.
+
+endmenu
+
+menu "TinyUSB / CDC"
+
+choice TINYUSB_CDC_TX_BUFSIZE_PRESET
+    prompt "TinyUSB CDC TX buffer preset"
+    default TINYUSB_CDC_TX_BUFSIZE_32KB
+    help
+        Select a preset for the TinyUSB CDC TX buffer size. Using the
+        preset avoids manual typing errors when switching sizes for
+        troubleshooting. The chosen preset sets the integer
+        `TINYUSB_CDC_TX_BUFSIZE` below via default expressions.
+
+config TINYUSB_CDC_TX_BUFSIZE_16KB
+    bool "16 KB (16384)"
+
+config TINYUSB_CDC_TX_BUFSIZE_32KB
+    bool "32 KB (32768)"
+
+config TINYUSB_CDC_TX_BUFSIZE_64KB
+    bool "64 KB (65536)"
+
+endchoice
+
+config TINYUSB_CDC_TX_BUFSIZE
+    int "TinyUSB CDC TX buffer size (bytes)"
+    default 16384 if TINYUSB_CDC_TX_BUFSIZE_16KB
+    default 32768 if TINYUSB_CDC_TX_BUFSIZE_32KB
+    default 65536 if TINYUSB_CDC_TX_BUFSIZE_64KB
+    range 1024 131072
+    help
+        The CDC TX buffer size used by the TinyUSB/CDC ACM driver. Choose
+        a preset above for common debug values, or set an explicit value
+        within the range if necessary. Larger buffers reduce USB
+        backpressure sensitivity but consume internal RAM.
 
 endmenu
 

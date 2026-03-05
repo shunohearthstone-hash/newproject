@@ -30,6 +30,12 @@
 
 static const char *TAG = "adc_fft";
 
+#if defined(__GNUC__) && !defined(__clang__)
+#define OPTIMIZE_O2 __attribute__((optimize("O2")))
+#else
+#define OPTIMIZE_O2
+#endif
+
 #define FFT_SIZE CONFIG_ADC_FFT_SIZE
 #define ADC_SPS CONFIG_ADC_FS
 
@@ -73,7 +79,6 @@ typedef struct __attribute__((packed)) {
 #define FRAME_PAYLOAD_SIZE (sizeof(frame_payload_t)) // Real data
 #define FRAME_TOTAL_SIZE                                                       \
   (FRAME_HEADER_SIZE + FRAME_PAYLOAD_SIZE + 4u) // +4 for CRC32
-
 _Static_assert(FRAME_PAYLOAD_SIZE <= UINT16_MAX,
                "payload length must fit in uint16");
 _Static_assert((FRAME_PAYLOAD_SIZE % 4u) == 0u,
@@ -86,15 +91,19 @@ typedef struct {
 static QueueHandle_t g_frameq;
 static uint16_t g_seq;
 static tinyusb_cdcacm_itf_t g_data_port = TINYUSB_CDC_ACM_0;
+static TaskHandle_t g_cdc_task_handle;
+static TaskHandle_t g_adc_task_handle;
 
 #if CONFIG_STATUS_NEOPIXEL_ENABLE
 static led_strip_handle_t g_led_strip;
 static SemaphoreHandle_t g_led_lock;
 #endif
 
-// Task stack size: 4096 words (~16 KB)
+// Task stack size: 4096 words (~16 KB). CDC TX uses small locals and no large
+// stack arrays; 4K words leaves comfortable headroom for TinyUSB calls.
 #define CDC_TX_TASK_STACK_SIZE 4096
-// FFT producer task stack size: 8192 words (~32 KB)
+// FFT producer task stack size: 8192 words (~32 KB). FFT math runs in-place on
+// globals; stack usage is modest but we keep extra headroom for IDF/DSP calls.
 #define ADC_TASK_STACK_SIZE 8192
 
 static inline void write_u16_le(uint8_t *dst, uint16_t value) {
@@ -146,9 +155,120 @@ static void build_frame(frame_wire_t *out, const float *data,
   write_u32_le(dst + off, crc);
 }
 
+#if CONFIG_DIAG_CDC_ENABLE
+typedef struct {
+  uint64_t total_bytes_sent;    /* lifetime */
+  uint32_t window_bytes;        /* bytes in current window */
+  uint64_t window_start_ms;
+  uint32_t wa_min;
+  uint32_t wa_max;
+  uint64_t wa_sum;
+  uint32_t wa_count;
+} diag_cdc_t;
+static diag_cdc_t s_diag_cdc;
+
+static void diag_cdc_reset_window(uint64_t now_ms)
+{
+  s_diag_cdc.window_bytes = 0;
+  s_diag_cdc.window_start_ms = now_ms;
+  s_diag_cdc.wa_min = UINT32_MAX;
+  s_diag_cdc.wa_max = 0;
+  s_diag_cdc.wa_sum = 0;
+  s_diag_cdc.wa_count = 0;
+}
+
+static void diag_cdc_sample_wa(uint32_t v)
+{
+  if (v < s_diag_cdc.wa_min) s_diag_cdc.wa_min = v;
+  if (v > s_diag_cdc.wa_max) s_diag_cdc.wa_max = v;
+  s_diag_cdc.wa_sum += v;
+  s_diag_cdc.wa_count++;
+}
+
+static void diag_cdc_on_queued(size_t q)
+{
+  s_diag_cdc.total_bytes_sent += q;
+  s_diag_cdc.window_bytes += (uint32_t)q;
+}
+
+static void diag_cdc_maybe_log(uint64_t now_ms)
+{
+  const uint64_t interval_ms = (uint64_t)CONFIG_DIAG_CDC_LOG_INTERVAL_S * 1000ULL;
+  if (now_ms < s_diag_cdc.window_start_ms + interval_ms) return;
+
+  uint64_t elapsed = now_ms - s_diag_cdc.window_start_ms;
+  float bps = elapsed ? (s_diag_cdc.window_bytes * 1000.0f) / (float)elapsed : 0.0f;
+  uint32_t wa_avg = s_diag_cdc.wa_count ? (uint32_t)(s_diag_cdc.wa_sum / s_diag_cdc.wa_count) : 0;
+
+  ESP_LOGI(TAG, "CDC diag: bytes_sec=%.1f B/s window=%llums total=%llu bytes, wa[min/avg/max]=%u/%u/%u count=%u",
+           bps, (unsigned long long)elapsed,
+           (unsigned long long)s_diag_cdc.total_bytes_sent,
+           (unsigned)s_diag_cdc.wa_min == UINT32_MAX ? 0 : (unsigned)s_diag_cdc.wa_min,
+           (unsigned)wa_avg,
+           (unsigned)s_diag_cdc.wa_max,
+           (unsigned)s_diag_cdc.wa_count);
+
+  /* reset window */
+  diag_cdc_reset_window(now_ms);
+}
+#endif /* CONFIG_DIAG_CDC_ENABLE */
+
+/* Helper: bounded retry flush with small exponential backoff.
+ * Returns true on success, false if all retries failed or port disconnected.
+ * This avoids tight-loop logging from tinyusb when the host is transiently
+ * unable to accept data.
+ */
+static bool safe_cdcacm_write_flush(tinyusb_cdcacm_itf_t port, int max_retries)
+{
+  if (!tud_cdc_n_connected((uint8_t)port)) {
+    return false;
+  }
+
+  const int base_delay_ms = 100;
+  uint64_t now_ms = 0;
+  static uint64_t last_flush_log_ms = 0;
+
+  for (int attempt = 0; attempt < max_retries; ++attempt) {
+    /* Increase flush timeout to 1000ms to allow large buffers (32KB) to drain
+     * at minimum USB speeds (335KB/s -> ~96ms), with margin for host latency.
+     */
+    esp_err_t err = tinyusb_cdcacm_write_flush(port, 1000);
+    if (err == ESP_OK) {
+      return true;
+    }
+    if (!tud_cdc_n_connected((uint8_t)port)) {
+      return false;
+    }
+    vTaskDelay(pdMS_TO_TICKS(base_delay_ms << attempt));
+  }
+
+  /* Rate-limit the warning to once per second to avoid spam. */
+  now_ms = esp_timer_get_time() / 1000ULL;
+  if (now_ms > last_flush_log_ms + 1000ULL) {
+    ESP_LOGW(TAG, "CDC flush failed after %d retries", max_retries);
+    last_flush_log_ms = now_ms;
+  }
+  return false;
+}
+
 static void cdc_tx_task(void *arg) {
 #if 1
   static frame_wire_t frm;
+
+  const size_t max_chunk = 512;
+  const uint32_t wait_step_ms = 2;
+  /* Increase timeout significantly for large FFT sizes to prevent frame drops
+   * that cause stream desynchronization. For FFT=4096, frame interval is ~100ms;
+   * allow up to 10 seconds for host processing/backpressure.
+   */
+  const uint32_t wait_budget_ms = 10000;
+
+  
+#if CONFIG_DIAG_CDC_ENABLE
+  /* initialize diagnostic window at task start */
+  diag_cdc_reset_window(esp_timer_get_time() / 1000ULL);
+  uint64_t last_stack_log_ms = esp_timer_get_time() / 1000ULL;
+#endif
   while (1) {
     if (xQueueReceive(g_frameq, &frm, portMAX_DELAY) == pdTRUE) {
       if (!tusb_cdc_acm_initialized(g_data_port) ||
@@ -159,66 +279,96 @@ static void cdc_tx_task(void *arg) {
         continue;
       }
 
-      /* Wait for TX FIFO to have enough space before starting */
-      int retries = 50;
-      while (tud_cdc_n_write_available((uint8_t)g_data_port) < 64 &&
-             retries-- > 0) {
-        vTaskDelay(pdMS_TO_TICKS(5));
-      }
-
-      /* Send in larger chunks with less delay */
+      /* Send in bounded chunks, waiting briefly for space if needed. */
       size_t sent = 0;
+      uint32_t waited_ms = 0;
       while (sent < FRAME_TOTAL_SIZE) {
         if (!tud_cdc_n_connected((uint8_t)g_data_port)) {
           break;
         }
 
         size_t chunk = FRAME_TOTAL_SIZE - sent;
-        if (chunk > 512)
-          chunk = 512; // Larger chunks
+        if (chunk > max_chunk) {
+          chunk = max_chunk;
+        }
+
+        uint32_t wa = tud_cdc_n_write_available((uint8_t)g_data_port);
+#if CONFIG_DIAG_CDC_ENABLE && CONFIG_DIAG_CDC_SAMPLE_WRITE_AVAILABLE
+        diag_cdc_sample_wa(wa);
+#endif
+        if (wa < chunk) {
+          if (waited_ms >= wait_budget_ms) {
+            ESP_LOGW(TAG, "CDC TX backpressure (%u ms), dropping frame",
+                     (unsigned)waited_ms);
+            break;
+          }
+          vTaskDelay(pdMS_TO_TICKS(wait_step_ms));
+          waited_ms += wait_step_ms;
+          continue;
+        }
 
         size_t queued =
             tinyusb_cdcacm_write_queue(g_data_port, frm.bytes + sent, chunk);
         if (queued == 0) {
-          vTaskDelay(pdMS_TO_TICKS(2)); // Shorter delay
+          if (waited_ms >= wait_budget_ms) {
+            ESP_LOGW(TAG, "CDC TX stalled (%u ms), dropping frame",
+                     (unsigned)waited_ms);
+            break;
+          }
+          vTaskDelay(pdMS_TO_TICKS(wait_step_ms));
+          waited_ms += wait_step_ms;
           continue;
         }
+#if CONFIG_DIAG_CDC_ENABLE
+        diag_cdc_on_queued(queued);
+#endif
         sent += queued;
-
-        /* Flush periodically to keep data moving */
-        if (sent % 1024 == 0) {
-          tinyusb_cdcacm_write_flush(g_data_port, 10);
-        }
       }
 
       if (sent < FRAME_TOTAL_SIZE) {
         ESP_LOGW(TAG, "CDC send dropped %u bytes",
                  (unsigned)(FRAME_TOTAL_SIZE - sent));
+#if CONFIG_DIAG_CDC_ENABLE
+        /* Report diagnostics even when a frame is dropped. */
+        uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+        diag_cdc_maybe_log(now_ms);
+#endif
         continue;
       }
 
-      esp_err_t err = tinyusb_cdcacm_write_flush(g_data_port, 50);
-      if (err != ESP_OK) {
+      if (!safe_cdcacm_write_flush(g_data_port, 6)) {
         ESP_LOGD(TAG, "CDC flush timeout (non-fatal)");
-      } else {
+      }
 #if CONFIG_STATUS_NEOPIXEL_ENABLE
-        if (g_led_strip) {
-          if (!g_led_lock ||
-              xSemaphoreTake(g_led_lock, pdMS_TO_TICKS(10)) == pdTRUE) {
-            uint8_t b = (uint8_t)CONFIG_STATUS_NEOPIXEL_BRIGHTNESS;
-            ESP_ERROR_CHECK(led_strip_set_pixel(g_led_strip, 0, 0, b, 0));
-            ESP_ERROR_CHECK(led_strip_refresh(g_led_strip));
-            if (g_led_lock) {
-              xSemaphoreGive(g_led_lock);
-            }
+      if (g_led_strip) {
+        if (!g_led_lock ||
+            xSemaphoreTake(g_led_lock, pdMS_TO_TICKS(10)) == pdTRUE) {
+          uint8_t b = (uint8_t)CONFIG_STATUS_NEOPIXEL_BRIGHTNESS;
+          ESP_ERROR_CHECK(led_strip_set_pixel(g_led_strip, 0, 0, b, 0));
+          ESP_ERROR_CHECK(led_strip_refresh(g_led_strip));
+          if (g_led_lock) {
+            xSemaphoreGive(g_led_lock);
           }
         }
-#endif
-#endif
       }
+#endif
+#if CONFIG_DIAG_CDC_ENABLE
+      /* periodic summary log (non-blocking) */
+      uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+      diag_cdc_maybe_log(now_ms);
+
+      if (now_ms > last_stack_log_ms + 5000ULL) {
+        UBaseType_t cdc_hwm = uxTaskGetStackHighWaterMark(g_cdc_task_handle);
+        UBaseType_t adc_hwm = uxTaskGetStackHighWaterMark(g_adc_task_handle);
+        ESP_LOGI(TAG, "Stack HWM: cdc_tx=%lu words, adc_fft=%lu words",
+                 (unsigned long)cdc_hwm, (unsigned long)adc_hwm);
+        last_stack_log_ms = now_ms;
+      }
+#endif
     }
   }
 }
+#endif
 
 #if CONFIG_STATUS_NEOPIXEL_ENABLE
 static void status_led_init(void) {
@@ -254,7 +404,7 @@ static void status_led_set(uint8_t r, uint8_t g, uint8_t b) {
   ESP_ERROR_CHECK(led_strip_refresh(g_led_strip));
   if (g_led_lock) {
     xSemaphoreGive(g_led_lock);
-  }
+  } 
 }
 #endif
 
@@ -294,19 +444,19 @@ static inline float sample_to_centered(uint16_t raw, bool calibrated,
   return (float)raw - 2048.0f; // 12-bit midpoint
 }
 
-static void apply_window(float *buf) {
+OPTIMIZE_O2 static void apply_window(float *buf) {
   for (int i = 0; i < FFT_SIZE; i++) {
     buf[i] *= win[i];
   }
 }
 
-static void perform_fft(float *buf) {
+OPTIMIZE_O2 static void perform_fft(float *buf) {
   dsps_fft4r_fc32(buf, FFT_SIZE >> 1);
   dsps_bit_rev4r_fc32(buf, FFT_SIZE >> 1);
   dsps_cplx2real_fc32(buf, FFT_SIZE >> 1);
 }
 
-static void apply_complex_cutoff(float *buf, uint32_t sps) {
+OPTIMIZE_O2 static void apply_complex_cutoff(float *buf, uint32_t sps) {
 #if CONFIG_OUTPUT_CUTOFF_HZ > 0
   uint32_t cutoff_hz = (uint32_t)CONFIG_OUTPUT_CUTOFF_HZ;
   uint32_t max_bin = (cutoff_hz * (uint64_t)FFT_SIZE) / sps;
@@ -342,6 +492,19 @@ static void adc_fft_task(void *arg) {
   if (calibrated) {
     (void)adc_cali_raw_to_voltage(cali_handle, 2048, &midpoint_mv);
   }
+
+  /* ADC decode diagnostics: validates that DMA words are parsed as expected
+   * (unit/channel/bitwidth). If ADC output format mismatches parsing, these
+   * counters will look obviously wrong (e.g., few accepted samples, many
+   * skipped/other channels).
+   */
+  uint64_t last_adc_diag_ms = esp_timer_get_time() / 1000ULL;
+  uint32_t diag_reads = 0;
+  uint32_t diag_out_bytes = 0;
+  uint32_t diag_accept_ch0 = 0;
+  uint32_t diag_accept_ch1 = 0;
+  uint32_t diag_skip_unit = 0;
+  uint32_t diag_other_chan = 0;
 
   adc_continuous_handle_t adc_handle = NULL;
   adc_continuous_handle_cfg_t handle_cfg = {
@@ -384,7 +547,8 @@ static void adc_fft_task(void *arg) {
   adc_continuous_config_t dig_cfg = {
       .sample_freq_hz = sample_rate,
       .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-      .format = ADC_DIGI_OUTPUT_FORMAT_TYPE1,
+      /* Must match adc_digi_output_data_t parsing below (p->type2.*). */
+      .format = ADC_DIGI_OUTPUT_FORMAT_TYPE2,
       .pattern_num = CHANNELS,
       .adc_pattern = pattern,
   };
@@ -452,21 +616,48 @@ static void adc_fft_task(void *arg) {
         vTaskDelay(pdMS_TO_TICKS(1));
         continue;
       }
+
+      /* Per-read diagnostics. */
+      diag_reads++;
+      diag_out_bytes += out_len;
+
       for (uint32_t i = 0; i + sizeof(adc_digi_output_data_t) <= out_len;
            i += sizeof(adc_digi_output_data_t)) {
         adc_digi_output_data_t *p = (adc_digi_output_data_t *)&raw[i];
         if (p->type2.unit != ADC_UNIT_1) {
+          diag_skip_unit++;
           continue;
         }
         if (p->type2.channel == CONFIG_ADC_CH0 && count0 < FFT_SIZE) {
           float val = sample_to_centered(p->type2.data, calibrated, midpoint_mv);
           ch0[count0++] = val;
           sum0 += val;
+          diag_accept_ch0++;
         } else if (p->type2.channel == CONFIG_ADC_CH1 && count1 < FFT_SIZE) {
           float val = sample_to_centered(p->type2.data, calibrated, midpoint_mv);
           ch1[count1++] = val;
           sum1 += val;
+          diag_accept_ch1++;
+        } else {
+          diag_other_chan++;
         }
+      }
+
+      /* Rate-limit to avoid log spam. */
+      uint64_t now_ms = esp_timer_get_time() / 1000ULL;
+      if (now_ms > last_adc_diag_ms + 2000ULL) {
+        ESP_LOGI(TAG,
+                 "ADC diag (2s): reads=%u out=%uB accept[ch0/ch1]=%u/%u skip_unit=%u other_chan=%u",
+                 (unsigned)diag_reads, (unsigned)diag_out_bytes,
+                 (unsigned)diag_accept_ch0, (unsigned)diag_accept_ch1,
+                 (unsigned)diag_skip_unit, (unsigned)diag_other_chan);
+        diag_reads = 0;
+        diag_out_bytes = 0;
+        diag_accept_ch0 = 0;
+        diag_accept_ch1 = 0;
+        diag_skip_unit = 0;
+        diag_other_chan = 0;
+        last_adc_diag_ms = now_ms;
       }
     }
 
@@ -485,8 +676,8 @@ static void adc_fft_task(void *arg) {
     perform_fft(ch0);
     perform_fft(ch1);
 
-    apply_complex_cutoff(ch0, per_channel_sps);
-    apply_complex_cutoff(ch1, per_channel_sps);
+   // apply_complex_cutoff(ch0, per_channel_sps);
+   // apply_complex_cutoff(ch1, per_channel_sps);
 
     uint64_t now_ms = esp_timer_get_time() / 1000ULL;
 
@@ -608,23 +799,33 @@ void app_main(void) {
                           sizeof(frame_wire_t));
   assert(g_frameq);
 
+  const BaseType_t tusb_core = 0;
+#if CONFIG_FREERTOS_UNICORE
+  const BaseType_t adc_core = 0;
+#else
+  const BaseType_t adc_core = 1;
+#endif
+
   xTaskCreatePinnedToCore(
                           cdc_tx_task,
                           "cdc_tx",
                           CDC_TX_TASK_STACK_SIZE,
                           NULL,
-                          5,
-                          NULL,
-                          1);
+                          8,
+                          &g_cdc_task_handle,
+                          tusb_core);
 
   xTaskCreatePinnedToCore(
                           adc_fft_task,
                           "adc_fft",
+
                           ADC_TASK_STACK_SIZE,
                           NULL,
-                          6,
-                          NULL,
-                          0);
+                          8,
+                          &g_adc_task_handle,
+                          adc_core);
 
   // Tasks run indefinitely; app_main can return.
 }
+
+
