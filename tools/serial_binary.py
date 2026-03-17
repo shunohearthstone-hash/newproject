@@ -6,6 +6,7 @@ import struct
 import sys
 import time
 import threading
+import queue
 from pathlib import Path
 from typing import Optional, TextIO, Any
 
@@ -112,6 +113,11 @@ def main() -> int:
     buffer = bytearray()
     last_seq = None
     dropped = 0
+    
+    # Thread communication
+    reader_stop_event = threading.Event()
+    frame_queue: queue.Queue = queue.Queue()
+    
     count = 0
     start = time.time()
     last_stats_time = start
@@ -294,6 +300,55 @@ def main() -> int:
                 buf.extend(chunk)
                 read_budget -= len(chunk)
 
+        # Threaded Serial Reader to prevent GUI blocking from causing buffer overflows
+        
+        def serial_reader_thread():
+            local_buffer = bytearray()
+            ser = open_serial_port()
+            next_reconnect = time.time()
+            
+            while not reader_stop_event.is_set():
+                if ser is None:
+                    if args.reconnect and time.time() >= next_reconnect:
+                        ser = open_serial_port()
+                        next_reconnect = time.time() + args.reconnect_delay
+                        if ser is not None:
+                            local_buffer.clear()
+                            # Reset sequence tracking in main thread? 
+                            # We can't access last_seq easily but main thread handles gaps.
+                            # Just clearing buffer is enough.
+                    else:
+                        time.sleep(0.1)
+                    continue
+
+                try:
+                    read_serial_nonblocking(ser, local_buffer)
+                    # Parse frames off the buffer
+                    new_frames = parse_frames(local_buffer)
+                    for nf in new_frames:
+                        frame_queue.put(nf)
+                except serial.SerialException as exc:
+                    print(f"Serial error: {exc}", file=sys.stderr)
+                    try:
+                        ser.close()
+                    except Exception:
+                        pass
+                    ser = None
+                    next_reconnect = time.time() + args.reconnect_delay
+                except Exception as e:
+                    print(f"Reader error: {e}", file=sys.stderr)
+                    time.sleep(1)
+
+                # Avoid 100% CPU
+                time.sleep(0.001)
+            
+            if ser:
+                ser.close()
+
+        # Start the reader thread
+        t_reader = threading.Thread(target=serial_reader_thread, daemon=True)
+        t_reader.start()
+
         if args.plot:
             import matplotlib.pyplot as plt
             import matplotlib.animation as animation
@@ -396,28 +451,15 @@ def main() -> int:
             next_reconnect = time.time()
 
             def update(_):
-                nonlocal ser, next_reconnect, buffer, last_seq
-                if ser is None:
-                    if args.reconnect and time.time() >= next_reconnect:
-                        ser = open_serial_port()
-                        next_reconnect = time.time() + args.reconnect_delay
-                        if ser is not None:
-                            buffer.clear()
-                            last_seq = None
-                    return lines
+                # Drain queue
+                frames_local = []
                 try:
-                    read_serial_nonblocking(ser, buffer)
-                except serial.SerialException as exc:
-                    print(f"Serial error while reading {args.port}: {exc}", file=sys.stderr)
-                    try:
-                        ser.close()
-                    except Exception:
-                        pass
-                    ser = None
-                    next_reconnect = time.time() + args.reconnect_delay
-                    return lines
-                frames = parse_frames(buffer)
-                for version, seq, payload in frames:
+                    while True:
+                        frames_local.append(frame_queue.get_nowait())
+                except queue.Empty:
+                    pass
+
+                for version, seq, payload in frames_local:
                     row = payload_to_row(version, payload)
                     if row is None:
                         continue
@@ -679,45 +721,28 @@ def main() -> int:
             )
             plt.show()
         else:
-            ser = open_serial_port()
-            next_reconnect = time.time()
+            # Non-plotting mode: just consume the queue
             while True:
-                if ser is None:
-                    if args.reconnect and time.time() >= next_reconnect:
-                        ser = open_serial_port()
-                        next_reconnect = time.time() + args.reconnect_delay
-                        if ser is not None:
-                            buffer.clear()
-                            last_seq = None
-                    time.sleep(0.05)
-                    continue
                 try:
-                    if ser is not None:
-                        read_serial_nonblocking(ser, buffer)
-                except serial.SerialException as exc:
-                    print(f"Serial error while reading {args.port}: {exc}", file=sys.stderr)
-                    try:
-                        ser.close()
-                    except Exception:
-                        pass
-                    ser = None
-                    next_reconnect = time.time() + args.reconnect_delay
+                    version, seq, payload = frame_queue.get(timeout=0.1)
+                except queue.Empty:
+                    if stop_requested:
+                        raise KeyboardInterrupt
                     continue
-                frames = parse_frames(buffer)
-                for version, seq, payload in frames:
-                    row = payload_to_row(version, payload)
-                    if row is None:
-                        continue
-                    handle_row(seq, row)
-                    if args.audio and audio_synth is not None:
-                        label = str(row[3])
-                        if args.audio_channel in label:
-                            payload_bytes = row[4]
-                            if isinstance(payload_bytes, (bytes, bytearray, memoryview)):
-                                bins_list = list(struct.unpack("<%df" % (len(payload_bytes)//4), payload_bytes))
-                            else:
-                                bins_list = list(payload_bytes)
-                            audio_synth.update(bins_list, int(row[1]), int(row[2]))
+                
+                row = payload_to_row(version, payload)
+                if row is None:
+                    continue
+                handle_row(seq, row)
+                if args.audio and audio_synth is not None:
+                    label = str(row[3])
+                    if args.audio_channel in label:
+                        payload_bytes = row[4]
+                        if isinstance(payload_bytes, (bytes, bytearray, memoryview)):
+                            bins_list = list(struct.unpack("<%df" % (len(payload_bytes)//4), payload_bytes))
+                        else:
+                            bins_list = list(payload_bytes)
+                        audio_synth.update(bins_list, int(row[1]), int(row[2]))
                 if stop_requested:
                     raise KeyboardInterrupt
 
@@ -730,6 +755,7 @@ def main() -> int:
         print(f"Serial error opening {args.port}: {exc}", file=sys.stderr)
         return 1
     finally:
+        reader_stop_event.set()
         if file_handle is not None:
             file_handle.close()
         if audio_stream is not None:

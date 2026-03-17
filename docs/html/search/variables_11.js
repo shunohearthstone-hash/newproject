@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['re_0',['re',['../unionsc16__u.html#a1167f20dd76cfaa7e13b92fe2c3268c3',1,'sc16_u::re'],['../unionfc32__u.html#a37e7746144e5186f5fc32fe9a827b9ec',1,'fc32_u::re']]],
+  ['read_5flock_1',['read_lock',['../structvfs__tinyusb__t.html#a0d16d47dc4322c6511baeaccf7323086',1,'vfs_tinyusb_t']]],
+  ['refresh_2',['refresh',['../structled__strip__t.html#a31295f688217f75eaf4639685e69e12b',1,'led_strip_t']]],
+  ['reset_5fcode_3',['reset_code',['../structrmt__led__strip__encoder__t.html#ac7be06cc3488fbfc1bc0c1e58f51d8dd',1,'rmt_led_strip_encoder_t']]],
+  ['resolution_4',['resolution',['../structled__strip__encoder__config__t.html#a9ab68c581424c5fbd050fa68d679f063',1,'led_strip_encoder_config_t']]],
+  ['resolution_5fhz_5',['resolution_hz',['../structled__strip__rmt__config__t.html#ac0a5bfa5fdd021a41de4e6dfaf9b1113',1,'led_strip_rmt_config_t']]],
+  ['result_5fdata_6',['result_data',['../components_2espressif____esp-dsp_2applications_2spectrum__box__lite_2main_2main_8c.html#a8843e211fa8ba36b993967a41d6950b8',1,'result_data:&#160;main.c'],['../components_2espressif____esp-dsp_2external__examples_2b00f000e_2applications_2spectrum__box__lite_2main_2main_8c.html#a8843e211fa8ba36b993967a41d6950b8',1,'result_data:&#160;main.c']]],
+  ['ringbuf_5fread_5fmux_7',['ringbuf_read_mux',['../structesp__tusb__cdcacm__t.html#a81b6418074edfec866f56b405425feeb',1,'esp_tusb_cdcacm_t']]],
+  ['rmt_5fchan_8',['rmt_chan',['../structled__strip__rmt__obj.html#ab85898e39c07878e7894cc287f6dfe11',1,'led_strip_rmt_obj']]],
+  ['rmt_5fchannel_9',['rmt_channel',['../structled__strip__rmt__obj.html#ab82ff420d372b8bd8ac96e39f137c3a9',1,'led_strip_rmt_obj']]],
+  ['rounding_5fbuff_10',['rounding_buff',['../structfir__s16__s.html#ab92b2d6c8dd045e7af3e29ae88841d77',1,'fir_s16_s']]],
+  ['rounding_5fval_11',['rounding_val',['../structfir__s16__s.html#a27cfdb7e62fe8a286a94ceb007846ac8',1,'fir_s16_s']]],
+  ['rows_12',['rows',['../classdspm_1_1_mat.html#ab10c4b469d0e3e0fc751ba44e45f9fec',1,'dspm::Mat']]],
+  ['rts_13',['rts',['../structcdcacm__event__line__state__changed__data__t.html#a57a49e9d8f021bd3b6b0aad31220fe6e',1,'cdcacm_event_line_state_changed_data_t']]],
+  ['rx_5fmode_14',['rx_mode',['../structvfs__tinyusb__t.html#a095fef79f7a81c7e2925638dd67e1d6a',1,'vfs_tinyusb_t']]],
+  ['rx_5ftfbuf_15',['rx_tfbuf',['../structesp__tusb__cdcacm__t.html#a32a54d90c2f9d6cb1b633f562c8bff68',1,'esp_tusb_cdcacm_t']]],
+  ['rx_5funread_5fbuf_16',['rx_unread_buf',['../structesp__tusb__cdcacm__t.html#abe2c81e4907d030d66b94476c8b50f85',1,'esp_tusb_cdcacm_t']]],
+  ['rx_5funread_5fbuf_5fsz_17',['rx_unread_buf_sz',['../structtinyusb__config__cdcacm__t.html#a81d94d9b0f80699fedc8a650dd5c840f',1,'tinyusb_config_cdcacm_t::rx_unread_buf_sz'],['../structesp__tusb__cdcacm__t.html#ac581d310ebc9b54677139fd48c384188',1,'esp_tusb_cdcacm_t::rx_unread_buf_sz']]],
+  ['rx_5fwanted_5fchar_5fdata_18',['rx_wanted_char_data',['../structcdcacm__event__t.html#aea7ced9353ad6f34ea6e26d32697e024',1,'cdcacm_event_t']]]
+];

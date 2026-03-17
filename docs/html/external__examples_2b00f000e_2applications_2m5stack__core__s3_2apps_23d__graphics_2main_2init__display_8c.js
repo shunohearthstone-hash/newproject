@@ -1,0 +1,35 @@
+var external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c =
+[
+    [ "BSP_AW9523_ADDR", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#af26a1317243d1c4836855a12c97963c1", null ],
+    [ "BSP_AXP2101_ADDR", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#ac7f42f3ac0330fd8b18a0b9b91e75405", null ],
+    [ "BSP_ERROR_CHECK_RETURN_ERR", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a61088fe7ad2d295829742a6ec0e19b1a", null ],
+    [ "BSP_ERROR_CHECK_RETURN_NULL", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#ae1234d6b90fa48eec75a6d7e0c57fda7", null ],
+    [ "BSP_NULL_CHECK", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a7fd051982b5301efc6858cd719d1ec27", null ],
+    [ "ESP_GOTO_ON_ERROR", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#ac3e1c009ea90e132ccb81365e1416efd", null ],
+    [ "ESP_RETURN_ON_ERROR", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#ac36d5544986130fd34797e69253b5788", null ],
+    [ "LCD_CMD_BITS", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a970dd1ec4cf86ef299ba32369eb49ce2", null ],
+    [ "LCD_LEDC_CH", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#ac3368a2115f9a8a758510b974eb12743", null ],
+    [ "LCD_PARAM_BITS", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#aeaa4b9f3aa7437180455e8da8e37c11f", null ],
+    [ "bsp_feature_t", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#adbba8b65de8c74725ff2c632e3f56dd0", [
+      [ "BSP_FEATURE_LCD", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#adbba8b65de8c74725ff2c632e3f56dd0aa223485cede138815d7de224aa7535c5", null ],
+      [ "BSP_FEATURE_TOUCH", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#adbba8b65de8c74725ff2c632e3f56dd0a4b4ea988f1b58458d7ae99beec7e9397", null ],
+      [ "BSP_FEATURE_SD", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#adbba8b65de8c74725ff2c632e3f56dd0afe8e34c6a6af478efafeeb153bcb86ba", null ],
+      [ "BSP_FEATURE_SPEAKER", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#adbba8b65de8c74725ff2c632e3f56dd0a01a1c9f8cc4f9cafbccdcb9355e5fabc", null ],
+      [ "BSP_FEATURE_CAMERA", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#adbba8b65de8c74725ff2c632e3f56dd0a10cffa066e9775cf06f05e3006583d3e", null ]
+    ] ],
+    [ "bsp_display_lcd_init", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a042e5da5d3336dd10ebda5674ec495c3", null ],
+    [ "bsp_enable_feature", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#ad7f56c5752f2747c0774a27b5622674b", null ],
+    [ "bsp_i2c_init", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#afb504c284aa8a47f2ffee89038bd5b98", null ],
+    [ "bsp_spi_init", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#ab742706b828d976fd293882d63d561a7", null ],
+    [ "display_init", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#af2392dd06c1a7e0f317d26309d9e0d18", null ],
+    [ "dsp_display_brightness_init", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#ae0e932afc1e59f18ce869a88e5954baf", null ],
+    [ "dsp_display_new", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#acbf166af6a0c6f9ee069922e14c83023", null ],
+    [ "dsp_display_start_with_config", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#aea76cb12d19d5676634c1a78817fa316", null ],
+    [ "aw9523_h", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a8b7f1a963c7ba13f9173bdbad24ab08c", null ],
+    [ "axp2101_h", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a423b0e2878a0a50ee3732437255dd7fb", null ],
+    [ "disp", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a647e5f267167a38dcd0e6fe55dfcfc61", null ],
+    [ "i2c_handle", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a721c9ecee4307bc707d56f8289af4bfb", null ],
+    [ "i2c_initialized", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a95927f9862fd820b287d27c4f9465da7", null ],
+    [ "spi_initialized", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a90589f9cd41f89c868ea376bc091ad9d", null ],
+    [ "TAG", "external__examples_2b00f000e_2applications_2m5stack__core__s3_2apps_23d__graphics_2main_2init__display_8c.html#a5a85b9c772bbeb480b209a3e6ea92b4c", null ]
+];

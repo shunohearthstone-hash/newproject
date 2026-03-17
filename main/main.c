@@ -56,9 +56,9 @@ static const char *TAG = "adc_fft";
 #define SPIKE_RATIO_THRESHOLD 8.0f
 #define SPIKE_MIN_AVG_LINEAR 1e-7f
 
-DRAM_ATTR __attribute__((aligned(16))) static float ch0[FFT_SIZE];
-DRAM_ATTR __attribute__((aligned(16))) static float ch1[FFT_SIZE];
-DRAM_ATTR __attribute__((aligned(16))) static float win[FFT_SIZE];
+static float *ch0 = NULL;
+static float *ch1 = NULL;
+static float *win = NULL;
 
 static adc_cali_handle_t cali_handle;
 
@@ -583,7 +583,8 @@ static void adc_fft_task(void *arg) {
            CONFIG_ADC_CH0, CONFIG_ADC_CH0 + 1, CONFIG_ADC_CH1,
            CONFIG_ADC_CH1 + 1, (unsigned)per_channel_sps, FFT_SIZE);
 
-  const size_t read_len = FFT_SIZE * CHANNELS * sizeof(adc_digi_output_data_t);
+  // Reduce DMA buffer size to save Internal RAM; we loop to fill the FFT buffer anyway.
+  const size_t read_len = 2048 * sizeof(adc_digi_output_data_t); 
   uint8_t *raw = heap_caps_aligned_alloc(16, read_len,
                                          MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
   if (!raw) {
@@ -766,6 +767,16 @@ void app_main(void) {
 #if CONFIG_ENABLE_SDM_WAVE_GEN
   ESP_ERROR_CHECK(wave_gen_sdm_start());
 #endif
+
+  size_t fft_mem_sz = FFT_SIZE * sizeof(float);
+  ch0 = heap_caps_aligned_alloc(16, fft_mem_sz, MALLOC_CAP_SPIRAM);
+  ch1 = heap_caps_aligned_alloc(16, fft_mem_sz, MALLOC_CAP_SPIRAM);
+  win = heap_caps_aligned_alloc(16, fft_mem_sz, MALLOC_CAP_SPIRAM);
+  
+  if (!ch0 || !ch1 || !win) {
+      ESP_LOGE(TAG, "Failed to allocate FFT buffers");
+      abort();
+  }
 
   /* Initialize DSP before any task can call FFT/window code. */
   ESP_ERROR_CHECK(dsps_fft4r_init_fc32(NULL, FFT_SIZE >> 1));

@@ -1,0 +1,28 @@
+var dspm__mult_8h =
+[
+    [ "dspm_mult_3x3x1_f32", "dspm__mult_8h.html#acf845ba247a2b93ad2a6b7bcb7072e19", null ],
+    [ "dspm_mult_3x3x3_f32", "dspm__mult_8h.html#accd21e4692e0778dca7154d9d74fc69e", null ],
+    [ "dspm_mult_4x4x1_f32", "dspm__mult_8h.html#a425be330fd928a9fc7cab8192ae9cab9", null ],
+    [ "dspm_mult_4x4x4_f32", "dspm__mult_8h.html#adfea768963f0b9c4792cd5645674aaf7", null ],
+    [ "dspm_mult_ex_f32", "dspm__mult_8h.html#a4058e1d71aa9f6686bf9039984ef3d2b", null ],
+    [ "dspm_mult_f32", "dspm__mult_8h.html#adb7839f78116b3d4878310b7affa2d0a", null ],
+    [ "dspm_mult_s16", "dspm__mult_8h.html#aeb6df7fd44c013577f967a3bc7f4f7b6", null ],
+    [ "dsps_add_f32", "dspm__mult_8h.html#a4f223284901dc0e73718ff90bf7c7c62", null ],
+    [ "dsps_sub_f32", "dspm__mult_8h.html#a4bf3ac7d22a45e6d34ce4354f126b255", null ],
+    [ "dspm_mult_3x3x1_f32_ae32", "dspm__mult_8h.html#a88404df7132af785a1bdb2f8b9aa3c36", null ],
+    [ "dspm_mult_3x3x3_f32_ae32", "dspm__mult_8h.html#a0900f988a32cd84494906464e3b664e2", null ],
+    [ "dspm_mult_4x4x1_f32_ae32", "dspm__mult_8h.html#ab0983baab232067f669ca5c139647c7a", null ],
+    [ "dspm_mult_4x4x4_f32_ae32", "dspm__mult_8h.html#a4b4b8f02345aca2b0b1aecce197ff7d2", null ],
+    [ "dspm_mult_ex_f32_ae32", "dspm__mult_8h.html#a71d969b1124945b82e7e2ccb3793b395", null ],
+    [ "dspm_mult_ex_f32_aes3", "dspm__mult_8h.html#afebc5b0bd1d51092acb35df3ff841889", null ],
+    [ "dspm_mult_ex_f32_ansi", "dspm__mult_8h.html#aab723a693cc2de422b1cb2c17a653b8c", null ],
+    [ "dspm_mult_ex_f32_arp4", "dspm__mult_8h.html#aed02396640dd104ea27ea2d6cceadf62", null ],
+    [ "dspm_mult_f32_ae32", "dspm__mult_8h.html#aa24068a1bb8cac4c1d41f8433a1bfdef", null ],
+    [ "dspm_mult_f32_aes3", "dspm__mult_8h.html#a2493a1df5776923a37b0525ee23cc148", null ],
+    [ "dspm_mult_f32_ansi", "dspm__mult_8h.html#ab2d9751c10ea4e02a7e06818570206b4", null ],
+    [ "dspm_mult_f32_arp4", "dspm__mult_8h.html#a81ce01d914a2f72bdd429bbf748b5e5d", null ],
+    [ "dspm_mult_s16_ae32", "dspm__mult_8h.html#ae2dc27e9cef2263368effa245311286a", null ],
+    [ "dspm_mult_s16_aes3", "dspm__mult_8h.html#a939b37535c9fb9b07d62fe9fb47abb0b", null ],
+    [ "dspm_mult_s16_ansi", "dspm__mult_8h.html#a599d1350fa87ca9d86498471787d0bab", null ],
+    [ "dspm_mult_s16_arp4", "dspm__mult_8h.html#a11484473361dd21ad7f550fbb8b8557d", null ]
+];
