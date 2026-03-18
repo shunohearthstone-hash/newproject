@@ -99,7 +99,10 @@ Replace `COMx` with the device port. Add `--hex-dump` when you want a byte-level
 
 ## Current Defaults
 
-The checked-in configuration is tuned for the current transport demo:
+The checked-in `menuconfig` configuration is tuned for the current transport demo:
+> Meaning raw FFT bin data transported off device. Any windowing, Top-K, Filtering is done on the python side
+> The `Kconfig`Transport and Display mode hooks are deprecated.
+> The functionality for on device Windowing, Top-K bins, IIR filtering remains and could be re-enabled with some work.
 
 - `CONFIG_ADC_FS=44100`
 - `CONFIG_ADC_FFT_SIZE=8192` 
