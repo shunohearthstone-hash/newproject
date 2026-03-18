@@ -99,9 +99,7 @@ Replace `COMx` with the device port. Add `--hex-dump` when you want a byte-level
 ## Current Defaults
 
 The checked-in `menuconfig` configuration is tuned for the current transport demo:
-> Meaning raw FFT bin data transported off device. Any windowing, Top-K, Filtering is done on the python side
-> The `Kconfig`Transport and Display mode hooks are deprecated.
-> The functionality for on device Windowing, Top-K bins, IIR filtering remains and could be re-enabled with some work.
+> **Meaning** raw FFT bin data transported off device. Any windowing, Top-K, Filtering is done on the python side to enable clean reconstruction
 
 - `CONFIG_ADC_FS=44100`
 - `CONFIG_ADC_FFT_SIZE=8192` 
@@ -115,7 +113,11 @@ The checked-in `menuconfig` configuration is tuned for the current transport dem
 - `CONFIG_ESP_WIFI_ENABLED` is disabled to keep the ADC path quiet and deterministic
 - `CONFIG_STATUS_NEOPIXEL_ENABLE=y` for simple runtime feedback
 
-If you switch to display mode in `menuconfig`, windowing, Top-K selection, cutoff frequency, and the ADC IIR filter become available again.
+---
+> The **Kconfig** Transport and Display mode hooks are deprecated.
+
+> The functionality for on device Windowing, Top-K bins, IIR filtering remains and could be re-enabled with some work.
+
 
 ## Frame Format
 
