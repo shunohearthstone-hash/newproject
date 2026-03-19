@@ -103,7 +103,7 @@ The checked-in `menuconfig` configuration is tuned for the current transport dem
 
 - `CONFIG_ADC_FS=44100`
 - `CONFIG_ADC_FFT_SIZE=8192` 
-  > *__Radix-4, only power of 4 values__*
+  > *__Radix-4: Valid power of 4 values__*
   >- 32
   >- 128
   >- 512
