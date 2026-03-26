@@ -133,7 +133,7 @@ Each frame contains:
 This structure gives the host a fast way to verify the stream and recover cleanly if the device resets or the connection drops.
 
 ## Further Reading
-- [Doxygen Function Graph/Docs]([https://rt-rtos.github.io/S3-FFT-Matplot/html](https://rt-rtos.github.io/S3-FFT-Matplot/html/main_2main_8c.html)
+- [Doxygen Function Graph/Docs](https://rt-rtos.github.io/S3-FFT-Matplot/html](https://rt-rtos.github.io/S3-FFT-Matplot/html/main_2main_8c.html)
 - Start with [main/main.c](main/main.c) if you want to follow the firmware pipeline.
 - Open [tools/serial_binary.py](tools/serial_binary.py) if you want to see how the host consumes the frames.
 - Use [tools/README.MD](tools/README.MD) for the full host-side CLI reference.
