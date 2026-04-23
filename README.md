@@ -116,7 +116,6 @@ The checked-in `menuconfig` configuration is tuned for the current transport dem
 
 ---
 > The **Kconfig** Transport and Display mode hooks are deprecated.
-
 > The functionality for on device Windowing, Top-K bins, IIR filtering remains and could be re-enabled with some work.
 
 
